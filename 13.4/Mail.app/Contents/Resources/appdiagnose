@@ -1,0 +1,135 @@
+#!/bin/sh
+
+# Can’t use $HOME, $USER, or logname(1), because none of those are set/work the way this script is invoked by sysdiagnose.
+userHome=$(dscl /Search -read /Users/$(stat -f "%Su" /dev/console) NFSHomeDirectory | head -n 1 | awk '{print $2}')
+
+# Configuration
+configurationDirectory="$1/Configuration"
+v2MailDataDirectory="$userHome/Library/Mail/V2/MailData"
+v3MailDataDirectory="$userHome/Library/Mail/V3/MailData"
+v4MailDataDirectory="$userHome/Library/Mail/V4/MailData"
+v5MailDataDirectory="$userHome/Library/Mail/V5/MailData"
+v6MailDataDirectory="$userHome/Library/Mail/V6/MailData"
+currentMailDataDirectory="$userHome/Library/Mail/V7/MailData"
+
+mkdir -p "$configurationDirectory"
+cp "$v2MailDataDirectory/Accounts.plist" "$configurationDirectory/"
+cp "$currentMailDataDirectory/FlagMailboxes.plist" "$configurationDirectory/"
+cp "$currentMailDataDirectory/SyncedFilesInfo.plist" "$configurationDirectory/"
+
+cp "$userHome/Library/Preferences/com.apple.mail.plist" "$configurationDirectory/com.apple.mail.unsandboxed.plist"
+cp "$userHome/Library/Containers/com.apple.mail/Data/Library/Preferences/com.apple.mail.plist" "$configurationDirectory/"
+
+cp -R "$userHome/Library/Containers/com.apple.mail/Data/Library/Saved Application State" "$configurationDirectory/"
+chmod a+rX "$configurationDirectory/Saved Application State"
+
+# Containers and symlinks
+ls -dl "$userHome/Library/Containers/"*"/Data/Library/Mail" > "$configurationDirectory/containers_listing.txt"
+ls -dl "$userHome/Library/Mail" >> "$configurationDirectory/containers_listing.txt"
+
+# Diagnostics
+diagnosticsDirectory="$1/Diagnostics"
+mkdir -p "$diagnosticsDirectory"
+
+spotlightDiagnosticsFile="$userHome/Library/Containers/com.apple.mail/Data/Library/Logs/Mail/MailSpotlightDiagnostics.txt"
+cp "$spotlightDiagnosticsFile" "$diagnosticsDirectory/"
+rm "$spotlightDiagnosticsFile"
+
+spotlightConsistencyLog="$diagnosticsDirectory/spotlight_consistency.txt"
+
+echo "### Spotlight flagged messages count" > "$spotlightConsistencyLog"
+echo "mdfind -onlyin ~/Library/Mail/ -count \"com_apple_mail_flagged=1\"" >> "$spotlightConsistencyLog"
+mdfind -onlyin "$userHome/Library/Mail/" -count "com_apple_mail_flagged=1" >> "$spotlightConsistencyLog"
+
+echo "\n### Spotlight flagged messages unread count" >> "$spotlightConsistencyLog"
+echo "mdfind -onlyin ~/Library/Mail/ -count \"com_apple_mail_flagged=1 && com_apple_mail_read=0\"" >> "$spotlightConsistencyLog"
+mdfind -onlyin "$userHome/Library/Mail/" -count "com_apple_mail_flagged=1 && com_apple_mail_read=0" >> "$spotlightConsistencyLog"
+
+echo "\n### Spotlight total unread count" >> "$spotlightConsistencyLog"
+echo "mdfind -onlyin ~/Library/Mail/ -count \"com_apple_mail_read=0\"" >> "$spotlightConsistencyLog"
+mdfind -onlyin "$userHome/Library/Mail/" -count "com_apple_mail_read=0" >> "$spotlightConsistencyLog"
+
+echo "\n### Spotlight inbox unread count (CoreSpotlight-indexed messages only)" >> "$spotlightConsistencyLog"
+echo "mdfind -onlyin ~/Library/Mail/ -count \"kMDItemMailboxes='inbox'w && com_apple_mail_read=0\"" >> "$spotlightConsistencyLog"
+mdfind -onlyin "$userHome/Library/Mail/" -count "kMDItemMailboxes='inbox'w && com_apple_mail_read=0" >> "$spotlightConsistencyLog"
+
+v2Database="$v2MailDataDirectory/Envelope Index"
+if [ -e "$v2Database" ]
+then
+	sqlite3 "$v2Database" "SELECT * FROM properties;" > "$configurationDirectory/v2_envelope_index_properties.txt"
+fi
+
+v3Database="$v3MailDataDirectory/Envelope Index"
+if [ -e "$v3Database" ]
+then
+sqlite3 "$v3Database" "SELECT * FROM properties;" > "$configurationDirectory/v3_envelope_index_properties.txt"
+fi
+
+v4Database="$v4MailDataDirectory/Envelope Index"
+if [ -e "$v4Database" ]
+then
+sqlite3 "$v4Database" "SELECT * FROM properties;" > "$configurationDirectory/v4_envelope_index_properties.txt"
+fi
+
+v5Database="$v5MailDataDirectory/Envelope Index"
+if [ -e "$v5Database" ]
+then
+sqlite3 "$v5Database" "SELECT * FROM properties;" > "$configurationDirectory/v5_envelope_index_properties.txt"
+fi
+
+v6Database="$v6MailDataDirectory/Envelope Index"
+if [ -e "$v6Database" ]
+then
+sqlite3 "$v6Database" "SELECT * FROM properties;" > "$configurationDirectory/v6_envelope_index_properties.txt"
+fi
+
+currentDatabase="$currentMailDataDirectory/Envelope Index"
+if [ -e "$currentDatabase" ]
+then
+	sqlite3 "$currentDatabase" "SELECT * FROM properties;" > "$configurationDirectory/envelope_index_properties.txt"
+	sqlite3 -line "$currentDatabase" "select rowid, remote_id, remote_mailbox, mailbox, date_sent, date_received, date_created, flags from messages where remote_id like 'temp-%'" > "$configurationDirectory/envelope_index_temp_remote_ids.txt"
+	sqlite3 -line "$currentDatabase" "select rowid, remote_id, remote_mailbox, mailbox, date_sent, date_received, date_created, flags from messages where remote_id isnull and remote_mailbox notnull and remote_mailbox = mailbox" > "$configurationDirectory/envelope_index_missing_remote_ids.txt"
+	sqlite3 -line "$currentDatabase" "select * from (select remote_id, group_concat(rowid), mailbox, count() as count from messages where remote_mailbox notnull and remote_mailbox = mailbox group by remote_id, mailbox) where count > 1" > "$configurationDirectory/envelope_index_duplicate_remote_ids.txt"
+
+	# Database unread counts
+	echo "\n### Actual flagged counts" >> "$spotlightConsistencyLog"
+	echo "SELECT count() FROM messages WHERE messages.flags&2 = 0 AND messages.flags&16 != 0" >> "$spotlightConsistencyLog"
+	sqlite3 -line "$currentDatabase" "SELECT count() AS flagged_count FROM messages WHERE messages.flags&2 = 0 AND messages.flags&16 != 0" >> "$spotlightConsistencyLog"
+
+	echo "\n### Actual unread flagged counts" >> "$spotlightConsistencyLog"
+	echo "SELECT count() FROM messages WHERE messages.flags&(1|2) = 0 AND messages.flags&16 != 0" >> "$spotlightConsistencyLog"
+	sqlite3 -line "$currentDatabase" "SELECT count() AS unread_flagged_count FROM messages WHERE messages.flags&(1|2) = 0 AND messages.flags&16 != 0" >> "$spotlightConsistencyLog"
+
+	echo "\n### Stored database unread total counts" >> "$spotlightConsistencyLog"
+	echo "SELECT SUM(mailboxes.unread_count), SUM(mailboxes.unread_count_adjusted_for_duplicates) FROM mailboxes" >> "$spotlightConsistencyLog"
+	sqlite3 -line "$currentDatabase" "SELECT SUM(mailboxes.unread_count) AS total_unread_count, SUM(mailboxes.unread_count_adjusted_for_duplicates) AS total_unread_count_adjusted_for_duplicates FROM mailboxes" >> "$spotlightConsistencyLog"
+
+	echo "\n### Actual database unread total counts" >> "$spotlightConsistencyLog"
+	echo "SELECT count() FROM messages JOIN mailboxes on messages.mailbox = mailboxes.ROWID WHERE messages.flags&(1|2) = 0" >> "$spotlightConsistencyLog"
+	sqlite3 -line "$currentDatabase" "SELECT count() AS count FROM messages JOIN mailboxes on messages.mailbox = mailboxes.ROWID WHERE messages.flags&(1|2) = 0" >> "$spotlightConsistencyLog"
+
+	echo "\n### Stored database unread inbox counts" >> "$spotlightConsistencyLog"
+	echo "SELECT mailboxes.rowid, mailboxes.url, mailboxes.unread_count, mailboxes.unread_count_adjusted_for_duplicates, mailboxes.source FROM mailboxes WHERE mailboxes.url LIKE '%INBOX' GROUP BY mailboxes.ROWID" >> "$spotlightConsistencyLog"
+	sqlite3 -line "$currentDatabase" "SELECT mailboxes.ROWID, mailboxes.url, mailboxes.unread_count, mailboxes.unread_count_adjusted_for_duplicates, mailboxes.source FROM mailboxes WHERE mailboxes.url LIKE '%INBOX' GROUP BY mailboxes.ROWID" >> "$spotlightConsistencyLog"
+
+	echo "\n### Actual database unread inbox counts" >> "$spotlightConsistencyLog"
+	echo "SELECT mailboxes.ROWID, mailboxes.url, count() FROM messages JOIN mailboxes on messages.mailbox = mailboxes.ROWID WHERE messages.flags&(1|2) = 0 AND mailboxes.source ISNULL AND mailboxes.url LIKE '%INBOX' GROUP BY mailboxes.ROWID" >> "$spotlightConsistencyLog"
+	echo "UNION" >> "$spotlightConsistencyLog"
+	echo "SELECT mailboxes.ROWID, mailboxes.url, count() FROM messages INNER JOIN labels ON labels.message_id = messages.ROWID INNER JOIN mailboxes ON labels.mailbox_id = mailboxes.ROWID AND messages.mailbox = mailboxes.source WHERE mailboxes.url LIKE '%INBOX' AND messages.flags&(1|2) = 0 GROUP BY mailboxes.ROWID" >> "$spotlightConsistencyLog"
+	sqlite3 -line "$currentDatabase" "SELECT mailboxes.ROWID, mailboxes.url, count() AS count FROM messages JOIN mailboxes on messages.mailbox = mailboxes.ROWID WHERE messages.flags&(1|2) = 0 AND mailboxes.source ISNULL AND mailboxes.url LIKE '%INBOX' GROUP BY mailboxes.ROWID UNION SELECT mailboxes.ROWID, mailboxes.url, count() AS count FROM messages INNER JOIN labels ON labels.message_id = messages.ROWID INNER JOIN mailboxes ON labels.mailbox_id = mailboxes.ROWID AND messages.mailbox = mailboxes.source WHERE mailboxes.url LIKE '%INBOX' AND messages.flags&(1|2) = 0 GROUP BY mailboxes.ROWID" >> "$spotlightConsistencyLog"
+
+	echo "\n### Actual database unread inbox adjusted counts" >> "$spotlightConsistencyLog"
+	echo "SELECT mailboxes.ROWID, mailboxes.url, count() FROM mailboxes INNER JOIN (SELECT ROWID, IFNULL(message_id, 'temp' || ROWID) as message_id, mailbox FROM messages WHERE flags&(1|2) = 0 GROUP BY message_id, mailbox) AS messages ON mailboxes.ROWID = messages.mailbox WHERE mailboxes.url LIKE '%INBOX' GROUP BY mailboxes.ROWID" >> "$spotlightConsistencyLog"
+	echo "UNION" >> "$spotlightConsistencyLog"
+	echo "SELECT mailboxes.ROWID, mailboxes.url, count() FROM mailboxes INNER JOIN (SELECT ROWID, IFNULL(message_id, 'temp' || ROWID) as message_id, mailbox FROM messages WHERE flags&(1|2) = 0 GROUP BY message_id, mailbox) AS messages ON mailboxes.source = messages.mailbox INNER JOIN labels ON labels.mailbox_id = mailboxes.ROWID AND labels.message_id = messages.ROWID WHERE mailboxes.url LIKE '%INBOX' GROUP BY mailboxes.ROWID" >> "$spotlightConsistencyLog"
+	sqlite3 -line "$currentDatabase" "SELECT mailboxes.ROWID, mailboxes.url, count() AS count FROM mailboxes INNER JOIN (SELECT ROWID, IFNULL(message_id, 'temp' || ROWID) as message_id, mailbox FROM messages WHERE flags&(1|2) = 0 GROUP BY message_id, mailbox) AS messages ON mailboxes.ROWID = messages.mailbox WHERE mailboxes.url LIKE '%INBOX' GROUP BY mailboxes.ROWID UNION SELECT mailboxes.ROWID, mailboxes.url, count() as count FROM mailboxes INNER JOIN (SELECT ROWID, IFNULL(message_id, 'temp' || ROWID) as message_id, mailbox FROM messages WHERE flags&(1|2) = 0 GROUP BY message_id, mailbox) AS messages ON mailboxes.source = messages.mailbox INNER JOIN labels ON labels.mailbox_id = mailboxes.ROWID AND labels.message_id = messages.ROWID WHERE mailboxes.url LIKE '%INBOX' GROUP BY mailboxes.ROWID" >> "$spotlightConsistencyLog"
+fi
+
+# Application diagnostics. Prefer collecting data in the script if possible, since this won't work if Mail's main thread has hung.
+# Only do this part if Mail is already running, running sysdiagnose shouldn't cause Mail to launch.
+if pgrep -q "^Mail\$"
+then
+	osascript -e "tell application id \"com.apple.mail\" to «event maildiag»"
+	cp -R "$userHome/Library/Containers/com.apple.mail/Data/Library/Logs/Mail/Diagnostics/"* "$diagnosticsDirectory/"
+	rm -Rf "$userHome/Library/Containers/com.apple.mail/Data/Library/Logs/Mail/Diagnostics/"*
+fi
