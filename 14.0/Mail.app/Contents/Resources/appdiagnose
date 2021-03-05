@@ -1,0 +1,6 @@
+#!/bin/sh
+# Appdiagnose needs to be replaced with a binary that can be given the appropriate entitlements.
+# Tracking that work under:
+# <rdar://problem/45846959> Sandcastle broke the Mail appdiagnose script and should be fixed
+
+exit 0

@@ -1,0 +1,224 @@
+{
+    "default set" = (
+        "archive_delete_junk",
+        "reply_replyAll_forward",
+        NSToolbarFlexibleSpaceItem,
+        "showPrintPanel:",
+        "FlaggedStatus",
+        "moveMessagesFromToolbar:"
+    );
+    "toolbar array" = (
+        (
+            {
+                identifier = "archive_delete_junk";
+                tag = 300;
+                segments = (
+                    {
+                        help = "ArchiveToolTip";
+                        identifier = "archiveMessages:";
+                        image = archivebox;
+                        tag = 0;
+                        title = "ArchiveToolbarTitle";
+                    },
+                    {
+                        help = "DeleteToolTip";
+                        identifier = "deleteMessages:";
+                        image = trash;
+                        tag = 70;
+                        title = "DeleteToolbarTitle";
+                        altTitle = "UndeleteToolbarTitle";
+                    },
+                    {
+                        help = "ToolTipJunk";
+                        identifier = "moveToJunk:";
+                        image = xmark.bin;
+                        tag = 0;
+                        title = "ToolbarJunk";
+                        altTitle = "ToolbarNotJunk";
+                    }
+                );
+            },
+            {
+                help = "ArchiveToolTip";
+                identifier = "archiveMessages:";
+                image = archivebox;
+                tag = 0;
+                title = "ArchiveToolbarTitle";
+            },
+            {
+                help = "DeleteToolTip";
+                identifier = "deleteMessages:";
+                image = trash;
+                tag = 70;
+                title = "DeleteToolbarTitle";
+                altTitle = "UndeleteToolbarTitle";
+            },
+            {
+                help = "ToolTipJunk";
+                identifier = "moveToJunk:";
+                image = xmark.bin;
+                tag = 0;
+                title = "ToolbarJunk";
+                altTitle = "ToolbarNotJunk";
+            },
+            {
+                identifier = "reply_replyAll_forward";
+                tag = 301;
+                segments = (
+                    {
+                        help = "ReplyToolTip";
+                        identifier = "replyMessage:";
+                        image = arrowshape.turn.up.backward;
+                        tag = 71;
+                        title = "ToolbarReply";
+                    },
+                    {
+                        help = "ReplyToAllToolTip";
+                        identifier = "replyAllMessage:";
+                        image = arrowshape.turn.up.backward.2;
+                        tag = 72;
+                        title = "ToolbarReplyAll";
+                    },
+                    {
+                        help = "ToolTipForward";
+                        identifier = "forwardMessage:";
+                        image = arrowshape.turn.up.forward;
+                        tag = 73;
+                        title = "ToolbarForward";
+                    }
+                );
+            },
+            {
+                help = "ReplyToolTip";
+                identifier = "replyMessage:";
+                image = arrowshape.turn.up.backward;
+                tag = 71;
+                title = "ToolbarReply";
+            },
+            {
+                help = "ReplyToAllToolTip";
+                identifier = "replyAllMessage:";
+                image = arrowshape.turn.up.backward.2;
+                tag = 72;
+                title = "ToolbarReplyAll";
+            },
+            {
+                help = "ToolTipForward";
+                identifier = "forwardMessage:";
+                image = arrowshape.turn.up.forward;
+                tag = 73;
+                title = "ToolbarForward";
+            },
+            {
+                identifier = "FlaggedStatus";
+                image = empty;
+                tag = 146;
+                target = "MessageViewer";
+                title = "SetFlaggedStatusToolbarTitle";
+            },
+            {
+                help = "ToolTipMove";
+                identifier = "moveMessagesFromToolbar:";
+                image = folder;
+                tag = 151;
+                target = "MessageViewer";
+                action = "submenuAction:";
+                title = "ToolbarMove";
+            },
+            {
+                help = "ToolTipCopy";
+                identifier = "copyMessagesFromToolbar:";
+                image = plus.square.on.square;
+                tag = 152;
+                target = "MessageViewer";
+                action = "submenuAction:";
+                title = "ToolbarCopy";
+            },
+            {
+                help = "ToolTipRedirect";
+                identifier = "redirectMessage:";
+                image = arrowshape.zigzag.forward;
+                oldImage = TB_RedirectTemplate;
+                tag = 101;
+                title = "ToolbarRedirect";
+            },
+            {
+                help = "ToolTipPrintCompose";
+                identifier = "showPrintPanel:";
+                image = printer;
+                tag = 85;
+                title = "ToolbarPrint";
+            },
+            {
+                help = "ToolTipHeaders";
+                identifier = "toggleAllHeaders:";
+                image = mail.and.magnifyingglass;
+                oldImage = TB_ShowHeadersTemplate;
+                tag = "-1";
+                paletteLabel = "ToolbarPaletteHeaders";
+                title = "ToolbarShowLongHeaders";
+                altTitle = "ToolbarHideLongHeaders";
+            },
+            {
+                identifier = "unread_read";
+                tag = 303;
+                segments = (
+                    {
+                        help = "ToolbarToolTipMarkUnread";
+                        identifier = "markAsUnreadFromToolbar:";
+                        image = envelope.badge;
+                        tag = 0;
+                        title = "ToolbarMarkUnread";
+                    },
+                    {
+                        help = "ToolbarToolTipMarkRead";
+                        identifier = "markAsReadFromToolbar:";
+                        image = envelope.open;
+                        tag = 0;
+                        title = "ToolbarMarkRead";
+                    }
+                );
+            },
+            {
+                help = "ToolTipAddAddress";
+                identifier = "addSenderToAddressBook:";
+                image = person.crop.circle.badge.plus;
+                paletteLabel = "ToolbarPaletteAddAddress";
+                tag = "-1";
+                title = "ToolbarAddAddress";
+            },
+            {
+                identifier = "font_smaller_bigger";
+                tag = 302;
+                segments = (
+                    {
+                        help = "ToolTipSmaller";
+                        identifier = "makeFontSmaller:";
+                        image = a;
+                        symbolScale = 2; // NSImageSymbolScaleMedium
+                        tag = "-1";
+                        title = "ToolbarSmaller";
+                    },
+                    {
+                        help = "ToolTipBigger";
+                        identifier = "makeFontBigger:";
+                        image = a;
+                        symbolScale = 3; // NSImageSymbolScaleLarge
+                        tag = "-1";
+                        title = "ToolbarBigger";
+                    }
+                );
+            },
+            {
+                help = "ToolTipHideRelatedMessages";
+                identifier = "toggleViewRelatedMessages:";
+                image = mail.stack;
+                oldImage = TB_RelatedMessagesTemplate;
+                tag = "102";
+                title = "HideRelatedMessagesToolbarTitle";
+                altTitle = "ShowRelatedMessagesToolbarTitle";
+                paletteLabel = "ShowHideRelatedMessagesToolbarPaletteLabel";
+            },
+        )
+    );
+}

@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>BuildMachineOSBuild</key>
+	<string>19A603013</string>
+	<key>CFBundleDevelopmentRegion</key>
+	<string>en</string>
+	<key>CFBundleDisplayName</key>
+	<string>MailQuickLookExtension.appex</string>
+	<key>CFBundleExecutable</key>
+	<string>MailQuickLookExtension</string>
+	<key>CFBundleIdentifier</key>
+	<string>com.apple.mail.MailQuickLookExtension</string>
+	<key>CFBundleInfoDictionaryVersion</key>
+	<string>6.0</string>
+	<key>CFBundleName</key>
+	<string>Mail</string>
+	<key>CFBundlePackageType</key>
+	<string>XPC!</string>
+	<key>CFBundleShortVersionString</key>
+	<string>1.0</string>
+	<key>CFBundleSupportedPlatforms</key>
+	<array>
+		<string>MacOSX</string>
+	</array>
+	<key>CFBundleVersion</key>
+	<string>3654.60.0.2.21</string>
+	<key>DTCompiler</key>
+	<string>com.apple.compilers.llvm.clang.1_0</string>
+	<key>DTPlatformBuild</key>
+	<string>12A8179f</string>
+	<key>DTPlatformName</key>
+	<string>macosx</string>
+	<key>DTPlatformVersion</key>
+	<string>11.2</string>
+	<key>DTSDKBuild</key>
+	<string>20D51</string>
+	<key>DTSDKName</key>
+	<string>macosx11.2internal</string>
+	<key>DTXcode</key>
+	<string>1200</string>
+	<key>DTXcodeBuild</key>
+	<string>12A8179f</string>
+	<key>LSMinimumSystemVersion</key>
+	<string>11.2</string>
+	<key>NSExtension</key>
+	<dict>
+		<key>NSExtensionAttributes</key>
+		<dict>
+			<key>QLSupportedContentTypes</key>
+			<array>
+				<string>com.apple.mail.email</string>
+				<string>com.apple.mail.emlx</string>
+			</array>
+			<key>QLSupportsSearchableItems</key>
+			<true/>
+		</dict>
+		<key>NSExtensionPointIdentifier</key>
+		<string>com.apple.quicklook.preview</string>
+		<key>NSExtensionPrincipalClass</key>
+		<string>PreviewViewController</string>
+	</dict>
+	<key>NSHumanReadableCopyright</key>
+	<string>Copyright © 2019 Apple Inc. All rights reserved.</string>
+</dict>
+</plist>
